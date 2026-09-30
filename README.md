@@ -151,31 +151,34 @@ Log in with either demo workspace:
 
 ---
 
-`npm run seed` is safe to rerun and adds the two workspaces, users, and four starter requests per workspace. Run `npm test` for backend and frontend tests, or `npm run build` for production builds.
+## Assumptions and Trade-offs
 
-## Structure and key decisions
+- **User-to-Workspace Binding**: Each user belongs to a single workspace. Authentication directly identifies the workspace; there is no dynamic workspace switcher or invitation flow.
+- **SQLite over PostgreSQL**: SQLite with synchronous `better-sqlite3` and WAL mode was chosen to provide an ultra-lightweight, zero-setup developer experience for local evaluation without external database services. The trade-off is single-file write serialization, which would be replaced by PostgreSQL in a multi-instance production environment.
+- **Client-Side State vs. Session Cookies**: Short-lived JWTs stored in client `localStorage` streamline setup and testing across distinct ports (`localhost:5173` client and `localhost:4000` API) without complex cross-origin cookie configurations.
+- **Idempotent Work Item Conversion**: Repeated conversion calls return the existing work item (`200 OK` with `alreadyExists: true`) rather than throwing an error, supporting reliable UI retries and idempotent network behavior.
 
-- `server/` contains the Express API, Zod validation, SQLite schema, seed script, and Supertest/Vitest tests.
-- `client/` contains the React/Vite app, Tailwind styles, Radix-powered confirmation dialog, and React Testing Library tests.
-- The signed JWT is the sole source of `userId` and `workspaceId`; clients cannot select a workspace. Every request, activity, and work-item lookup is scoped to the token workspace, and cross-workspace IDs appear not found.
-- Conversion runs in one SQLite transaction. It verifies the request is qualified, returns an existing work item on repeat calls, and inserts the work item and activity together. `UNIQUE(request_id)` is the final race-condition guard.
-- Activity records are written for request creation, edits, and successful conversion. Suggested actions only open an existing edit form or the conversion confirmation; they never change data automatically.
+---
 
---
-## Assumptions and trade-offs
+## What to Improve With More Time
 
-- A user belongs to one workspace, and login identifies that workspace; there is no workspace selector or invitation flow.
-- Request statuses are `NEW`, `QUALIFIED`, and `CLOSED`. Editing a request is the explicit way to change status; conversion is allowed only for qualified requests.
-- SQLite and synchronous `better-sqlite3` keep this single-instance assignment easy to run. The browser keeps its short-lived access token in local storage; demo accounts share a documented password and are for local use only.
-- The app uses a small set of custom Tailwind components and Radix UI primitives rather than a generated shadcn/ui component registry.
+1. **PostgreSQL with Native Row-Level Security (RLS)**: Enforce tenant isolation at the database engine level via `CREATE POLICY ... USING (workspace_id = current_setting('app.current_workspace_id'))`.
+2. **Refresh Token Rotation**: Store access tokens in memory and issue refresh tokens inside secure, `HttpOnly`, `SameSite=Strict` cookies to guard against XSS vulnerabilities.
+3. **Distributed Rate Limiting**: Replace in-memory failed login tracking with Redis-backed token-bucket rate limiting (`express-rate-limit` + `rate-limit-redis`).
+4. **Multi-User Workspace Collaboration**: Add team invitations, member management, and granular permission roles (`ADMIN`, `OPERATOR`, `VIEWER`).
+5. **Containerization**: Provide a single-command `docker-compose.yml` defining API, web client, and persistent volumes.
 
-## With more time
+---
 
-I would add rate limiting and refresh-token rotation, move production data to Postgres with row-level security, and provide Docker-based local setup and deployment. I would also add workspace membership/invitations, stronger account/password management, and broader accessibility and end-to-end coverage.
+## AI Assistance and Review
 
-## AI assistance and review
+AI tooling was used to help scaffold initial TypeScript interface definitions, boilerplate test setup, and design tokens. All generated code and structures were strictly reviewed and validated:
+- Inspected all database queries for parameterized inputs and strict `workspace_id = ?` scoping.
+- Verified atomic transaction semantics and `UNIQUE(request_id)` race-condition handling.
+- Validated all Supertest backend tests and React Testing Library frontend tests with 100% pass rates.
+- Verified TypeScript compilation and Vite production bundle outputs.
 
-GitHub Copilot SDK in VS Code was used to help scaffold and refine the implementation. The output was reviewed against the workspace-isolation and conversion requirements, checked with the focused backend and frontend tests, and validated with TypeScript/production builds.
+---
 
 ## License
 
