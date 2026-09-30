@@ -119,7 +119,7 @@ export function getRequest(database: Database.Database, user: AuthUser, id: stri
 export function getRequestDetail(database: Database.Database, user: AuthUser, id: string) {
   const request = getRequest(database, user, id);
   const activities = database.prepare(
-    `SELECT activities.id, activities.action, activities.created_at,
+    `SELECT activities.id, activities.request_id, activities.action, activities.created_at,
       users.name AS user_name, users.role AS user_role
      FROM activities JOIN users ON users.id = activities.user_id
      WHERE activities.request_id = ? AND activities.workspace_id = ?

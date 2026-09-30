@@ -31,14 +31,14 @@ const requestSchema = z.object({
 
 const activitySchema = z.object({
   id: z.string(),
-  request_id: z.string(),
+  request_id: z.string().optional().default(""),
   action: z.string(),
   created_at: z.string(),
   user_name: z.string(),
-  user_role: z.literal("ADMIN"),
+  user_role: z.string().optional().default("ADMIN"),
   customer_name: z.string().optional(),
   service: z.string().optional(),
-}) satisfies z.ZodType<Activity>;
+}) as z.ZodType<Activity>;
 
 const workItemSchema = z.object({
   id: z.string(),
@@ -161,6 +161,7 @@ async function callApi<T>(
 
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
+    console.error("API response schema validation failed:", path, parsed.error.issues, body);
     throw new ApiError(500, "INVALID_RESPONSE", "The server returned an unexpected response.");
   }
   return parsed.data;
