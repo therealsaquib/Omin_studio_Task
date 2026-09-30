@@ -151,6 +151,32 @@ Log in with either demo workspace:
 
 ---
 
+`npm run seed` is safe to rerun and adds the two workspaces, users, and four starter requests per workspace. Run `npm test` for backend and frontend tests, or `npm run build` for production builds.
+
+## Structure and key decisions
+
+- `server/` contains the Express API, Zod validation, SQLite schema, seed script, and Supertest/Vitest tests.
+- `client/` contains the React/Vite app, Tailwind styles, Radix-powered confirmation dialog, and React Testing Library tests.
+- The signed JWT is the sole source of `userId` and `workspaceId`; clients cannot select a workspace. Every request, activity, and work-item lookup is scoped to the token workspace, and cross-workspace IDs appear not found.
+- Conversion runs in one SQLite transaction. It verifies the request is qualified, returns an existing work item on repeat calls, and inserts the work item and activity together. `UNIQUE(request_id)` is the final race-condition guard.
+- Activity records are written for request creation, edits, and successful conversion. Suggested actions only open an existing edit form or the conversion confirmation; they never change data automatically.
+
+--
+## Assumptions and trade-offs
+
+- A user belongs to one workspace, and login identifies that workspace; there is no workspace selector or invitation flow.
+- Request statuses are `NEW`, `QUALIFIED`, and `CLOSED`. Editing a request is the explicit way to change status; conversion is allowed only for qualified requests.
+- SQLite and synchronous `better-sqlite3` keep this single-instance assignment easy to run. The browser keeps its short-lived access token in local storage; demo accounts share a documented password and are for local use only.
+- The app uses a small set of custom Tailwind components and Radix UI primitives rather than a generated shadcn/ui component registry.
+
+## With more time
+
+I would add rate limiting and refresh-token rotation, move production data to Postgres with row-level security, and provide Docker-based local setup and deployment. I would also add workspace membership/invitations, stronger account/password management, and broader accessibility and end-to-end coverage.
+
+## AI assistance and review
+
+GitHub Copilot SDK in VS Code was used to help scaffold and refine the implementation. The output was reviewed against the workspace-isolation and conversion requirements, checked with the focused backend and frontend tests, and validated with TypeScript/production builds.
+
 ## License
 
-Private and proprietary. Built for Omni Studio technical assessment.
+Private and proprietary. Built for Omni Studio technical assessment by Mohd Saqib.
