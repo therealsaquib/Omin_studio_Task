@@ -1,0 +1,12 @@
+ALTER TABLE users
+  ADD COLUMN role TEXT NOT NULL DEFAULT 'ADMIN'
+  CHECK (role IN ('ADMIN'));
+
+ALTER TABLE requests
+  ADD COLUMN customer_phone TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE requests
+  ADD COLUMN customer_email TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE requests
+  ADD COLUMN customer_city TEXT NOT NULL DEFAULT '';

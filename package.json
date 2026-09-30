@@ -1,0 +1,21 @@
+{
+  "name": "omni-client-system",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "install": "node scripts/install.cjs",
+    "dev": "concurrently -k -n server,client \"npm:dev --workspace=server\" \"npm:dev --workspace=client\"",
+    "test": "npm run test --workspace=server && npm run test --workspace=client",
+    "build": "npm run build --workspace=server && npm run build --workspace=client",
+    "seed": "npm run seed --workspace=server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

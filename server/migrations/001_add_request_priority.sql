@@ -1,0 +1,3 @@
+ALTER TABLE requests
+  ADD COLUMN priority TEXT NOT NULL DEFAULT 'NORMAL'
+  CHECK (priority IN ('URGENT', 'IMPORTANT', 'NORMAL'));
